@@ -13,6 +13,10 @@ MEMORY
 /* Define output sections */
 SECTIONS 
 {
+  /DISCARD/ : {
+    *(.eh_frame)
+    *(.eh_frame_hdr)
+  }
   .iram.text : ALIGN(4)
   {
     . = ALIGN(16);

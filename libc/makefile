@@ -10,7 +10,7 @@ INCLUDEDIR?=$(PREFIX)/include
 LIBDIR?=$(EXEC_PREFIX)/lib
 
 CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -mtext-section-literals
-CPPFLAGS:=$(CPPFLAGS) -D__is_libc -Iinclude -I../kernel/include
+CPPFLAGS:=$(CPPFLAGS) -D__is_libc -Iinclude
 LIBK_CFLAGS:=$(CFLAGS)
 LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_libk
 
@@ -30,7 +30,7 @@ LIBK_OBJS=$(FREEOBJS:.o=.libk.o)
 BINARIES=libk.a
 
 .PHONY: all clean install install-headers install-libs
-.SUFFIXES: .o .libk.o .c .s
+.SUFFIXES: .o .libk.o .cpp .s
 
 all: $(BINARIES)
 
@@ -40,17 +40,17 @@ libc.a: $(OBJS)
 libk.a: $(LIBK_OBJS)
 	xtensa-esp32-elf-ar rcs $@ $(LIBK_OBJS)
 
-.c.o:
-	xtensa-esp32-elf-gcc -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
+.cpp.o:
+	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
-.c.s:
-	xtensa-esp32-elf-gcc -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+.cpp.s:
+	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
-.c.libk.o:
-	xtensa-esp32-elf-gcc -MD -c $< -o $@ -std=gnu11 $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)
+.cpp.libk.o:
+	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)
 
-.S.libk.o:
-	xtensa-esp32-elf-gcc -MD -c $< -o $@ $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)
+.s.libk.o:
+	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)
 
 clean:
 	rm -f $(BINARIES) *.a
