@@ -15,8 +15,10 @@ LIBK_CFLAGS:=$(CFLAGS)
 LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_libk
 
 FREEOBJS=\
-stdio/printf.o \
-string/memfunc.o \
+string/memmove.o \
+string/memcpy.o \
+string/memset.o \
+string/strlen.o \
 
 HOSTEDOBJS=\
 $(ARCH_HOSTEDOBJS) \

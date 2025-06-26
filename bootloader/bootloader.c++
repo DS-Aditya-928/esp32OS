@@ -1,45 +1,39 @@
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
+#include <UART.h>
 
 extern unsigned int _sidata, _sbss, _ebss, _sdata, _edata;
 
-#define GPIO_OUT_W1TS_REG 0x3FF44008
-#define GPIO_OUT_W1TC_REG 0x3FF4400C
-#define GPIO_ENABLE_REG   0x3FF44020
-#define GPIO5             5
-
-int global_data = 42;         // Goes to .data
-int p;
+#define UART_0_TXFIFO_REG 0x3FF40000
 
 extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
 {
-   //memset( &_sbss, 0, ( &_ebss - &_sbss ) * sizeof( _sbss ) );//zero .bss
+   memset( &_sbss, 0, ( &_ebss - &_sbss ) * sizeof( _sbss ) );//zero .bss
    memmove( &_sdata, &_sidata, ( &_edata - &_sdata ) * sizeof( _sdata ) ); //copy.data to ram
 
-   /*sdgf
-   volatile uint32_t* gpio_out_w1ts_reg = (volatile uint32_t*) GPIO_OUT_W1TS_REG;
-   volatile uint32_t* gpio_out_w1tc_reg = (volatile uint32_t*) GPIO_OUT_W1TC_REG;
-   volatile uint32_t* gpio_enable_reg = (volatile uint32_t*) GPIO_ENABLE_REG;
-
-    // Set the mode for GPIO5 to output
-   *gpio_enable_reg = (1 << GPIO5);
-   *gpio_out_w1tc_reg = (1 << GPIO5);
-   */
-
-   //*(int*)(0x3FF40000) = 10;
-
-   //char x[] = "abc\n";
-   //char* y = (char*)malloc(10);
-   for(int i = 0; i < 1000; i++)
-   {
-      //print("hello\n", 7);
-   }
-   
+   static const char x[] = "abc";
    while(1)
    {
-      *(char*)(UART_0_TXFIFO_REG) = 'a';
-      //void* x = malloc(10);
+      //UART::print(1234);
+      //*(int*)(0x3FF5F064) = 0x050D83AA1;//write protection register
+      //*(int*)(0x3FF5F060) = 1;
+      *(unsigned int*)(0x3FF480A4) = 0x50D83AA1;//rtc disable pro
+      *(unsigned int*)(0x3FF5F064) = 0x50D83AA1;//wdt0 disable pro
+
+      unsigned int x = *(unsigned int*)(0x3FF4808C);
+      x &= ~(1U << 10);
+      *(unsigned int*)(0x3FF4808C) = x;//disable rtc boot protection
+      
+      unsigned short y = *(unsigned short*)(0x3FF5F048);
+      y &= ~(1U << 15);
+      *(unsigned short*)(0x3FF4808C) = y;
+
+      *(unsigned int*)(0x3FF480A0) = 1;//feed rtc wdt
+      *(unsigned int*)(0x3FF5F060) = 1;//feed t0 wdt
+
+      *(unsigned int*)(0x3FF480A4) = 1;//reenable rtc protection
+      *(unsigned int*)(0x3FF5F064) = 1;
+      //*(char*)(UART_0_TXFIFO_REG) = *x;
    }
 }
 

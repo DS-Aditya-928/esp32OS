@@ -10,8 +10,8 @@ INCLUDEDIR?=$(PREFIX)/include
 LIBDIR?=$(EXEC_PREFIX)/lib
 
 CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -mtext-section-literals
-CPPFLAGS:=$(CPPFLAGS) -Iinclude
-LIBK_CFLAGS:=$(CFLAGS)
+CPPFLAGS:=$(CPPFLAGS) -Iinclude -I../libc/include
+LIBK_CFLAGS:=$(CFLAGS) -L../libc -Lk
 LIBK_CPPFLAGS:=$(CPPFLAGS)
 
 FREEOBJS=\
@@ -37,13 +37,13 @@ libhal.a: $(LIBK_OBJS)
 	xtensa-esp32-elf-ar rcs $@ $(LIBK_OBJS)
 
 .c.o:
-	xtensa-esp32-elf-g++ -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
+	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 .c.s:
 	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 .c.libhal.o:
-	xtensa-esp32-elf-g++ -MD -c $< -o $@ -std=gnu11 $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)
+	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)
 
 .S.libhal.o:
 	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)
