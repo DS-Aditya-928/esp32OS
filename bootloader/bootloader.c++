@@ -14,16 +14,35 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
 
    WDT::disableBootProtection(WDT::RTC);
    WDT::disableBootProtection(WDT::TIMG0);
-   static const char p[] = "xyz";
+   unsigned int intEnable = *(unsigned int*)(0x3FF4000C);
+   intEnable |= (1 << 14);
+   *(unsigned int*)(0x3FF4000C) = intEnable;
+   static const char p[] = "xyz\r\n";
    
    while(1)
    {
-      int txfifo = (int)(((*(int*)(0x3FF4005C)) >> 2) & 0x7FF);
-
-      for(unsigned char i = 0; i < 3; i++)
+      for(unsigned char i = 0; i < 6; i++)
       {
-         
+         /*
+         unsigned char inBuf = 0;
+         for(int i = 0; i < 100000; i++)
+         {
+            unsigned int txStatus = *(unsigned int*)(0x3FF4001C);
+            inBuf = (txStatus >> 8) & 0xF;
+            char t = *(char*)(UART_0_TXFIFO_REG);
+            if(t != 0)
+            {
+               *(char*)(UART_0_TXFIFO_REG) = t;
+            }
+         }
+         */
          *(char*)(UART_0_TXFIFO_REG) = p[i];
+         while(((*(unsigned int*)(0x3FF40008) >> 14) & 1U) == 0)//endlessly loop while txdone bit is not set 
+         {
+            //*(char*)(UART_0_TXFIFO_REG) = ((intEnable >> 1) & 1U) + '0';
+            //*(unsigned int*)(0x3FF40010) |= (1U << 1);
+         }
+         *(unsigned int*)(0x3FF40010) |= (1U << 14);//clear the interrupt bit i.e set it to 0.
       }
       
       //UART::print(1234);
