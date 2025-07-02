@@ -1,33 +1,81 @@
 #include "UART.h"
 #include "string.h"
 
-typedef unsigned long uintptr_t;
+#define UART_0 0x3FF40000
+#define UART_1 0x3FF50000
+#define UART_2 0x3FF6E000
+
+#define UART_FIFO_REG  0x0
+#define UART_INT_ST_REG 0x8
+#define UART_INT_ENA_REG 0xC
+#define UART_INT_CLR_REG 0x10
+
+unsigned int UART::uart = UART_0;
+
+void UART::setActive(int x)
+{
+    switch(x)
+    {
+        case 0:
+        {
+            uart = UART_0;
+            break;
+        }
+
+        case 1:
+        {
+            uart = UART_1;
+            break;
+        }
+
+        case 2:
+        {
+            uart = UART_2;
+            break;
+        }
+    }
+}
 
 int UART::init()
 {
+    unsigned int intEnable = *(unsigned int*)(uart + UART_INT_ENA_REG);
+    intEnable |= (1 << 14);
+   *(unsigned int*)(uart + UART_INT_ENA_REG) = intEnable;
     return(0);
+}
+
+
+void UART::sendCharW(char c)
+{
+    *(char*)(uart + UART_FIFO_REG) = c;
+
+    while(((*(unsigned int*)(uart + UART_INT_ST_REG) >> 14) & 1U) == 0)//endlessly loop while txdone bit is not set 
+    {
+        
+    }
+    *(unsigned int*)(uart + UART_INT_CLR_REG) |= (1U << 14);//clear the interrupt bit i.e set it to 0.
 }
 
 bool UART::print(const char* x)
 {
-    *(char*)UART_0_TXFIFO_REG = x[0];
-    //memcpy((char*)UART_0_TXFIFO_REG, x, strlen(x));
-    //*(char*)UART_0_TXFIFO_REG = *x;
+    int l = strlen(x);
+    for(int i = 0; i < l; i++)
+    {
+        sendCharW(x[i]);
+    }   
 
     return(true);
 }
 
 bool UART::print(int x)
 {
-    int i = 0;
-    while(x > 0)
+    int y = x;
+    while(y > 0)
     {
-        int digit = x%10;
-        *(char*)(UART_0_TXFIFO_REG) = digit + '0';
-        i++;
-        x = x/10;
-    }
+        int digit = y%10;
+        y = y/10;
 
-    //*(char*)(UART_0_TXFIFO_REG) = 'E';
+        sendCharW((char)(digit + '0'));
+    }
     return(true);
 }

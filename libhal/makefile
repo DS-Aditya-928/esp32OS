@@ -1,4 +1,4 @@
-CFLAGS?=-O2 -g
+CFLAGS?=-g
 CPPFLAGS?=
 LDFLAGS?=
 LIBS?=

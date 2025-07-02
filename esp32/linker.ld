@@ -6,7 +6,7 @@ MEMORY
   /* Use values from the ESP-IDF 'bootloader' component.
   /* TODO: Use human-readable lengths */
   /* TODO: Use the full memory map - this is just a test */
-  iram_seg ( RWX )       : ORIGIN = 0x40080400, len = 0x20000
+  iram_seg ( RWX )       : ORIGIN = 0x40080400, len = 0x20000 //these segs are loaded automatically into RAM by stage 1 bootloader
   dram_seg ( RW )       : ORIGIN = 0x3FFF0000, len = 0x10000
 }
 
@@ -32,7 +32,7 @@ SECTIONS
   } >iram_seg
 
   _sidata = .;
-  .data : AT(_sidata)
+  .data : 
   {
     . = ALIGN(4);
     _sdata = .;

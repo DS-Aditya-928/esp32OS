@@ -4,3 +4,4 @@
 *.disasm
 *.o
 *.d
+*.txt

@@ -15,7 +15,7 @@
 /* Threshold for punting to the big block byte copier.  */
 #define TOO_SMALL_BIG_BLOCK(LEN)  ((LEN) < BIG_BLOCK_SIZE)
 
-void* memmove(void *dst_void,
+extern "C" void* memmove(void *dst_void,
         const void *src_void,
         size_t length)
 {
