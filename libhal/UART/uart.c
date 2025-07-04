@@ -41,6 +41,9 @@ int UART::init()
     unsigned int intEnable = *(unsigned int*)(uart + UART_INT_ENA_REG);
     intEnable |= (1 << 14);
    *(unsigned int*)(uart + UART_INT_ENA_REG) = intEnable;
+
+   sendCharW('\r');
+   sendCharW('\n');
     return(0);
 }
 
@@ -70,11 +73,21 @@ bool UART::print(const char* x)
 bool UART::print(int x)
 {
     int y = x;
-    while(y > 0)
+    if(y < 0)
     {
-        int digit = y%10;
-        y = y/10;
-
+        y = y * -1;
+        sendCharW('-');
+    }
+    int b10 = 1;
+    while(b10 * 10 <= y)
+    {
+        b10 = b10 * 10;
+    }
+    while(b10 > 0)
+    {
+        int digit = y/b10;
+        y = y%b10;
+        b10 = b10/10;
         sendCharW((char)(digit + '0'));
     }
     return(true);
