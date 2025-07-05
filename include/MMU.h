@@ -5,4 +5,6 @@ class MMU
 {
 public:
     static void init();//map basic
-}
+};
+
+#endif

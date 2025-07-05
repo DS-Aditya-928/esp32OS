@@ -17,6 +17,7 @@ LIBK_CPPFLAGS:=$(CPPFLAGS)
 FREEOBJS=\
 UART/uart.o \
 WDT/wdt.o \
+MMU/mmu.o \
 
 HOSTEDOBJS=\
 $(ARCH_HOSTEDOBJS) \
