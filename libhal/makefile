@@ -10,7 +10,7 @@ INCLUDEDIR?=$(PREFIX)/include
 LIBDIR?=$(EXEC_PREFIX)/lib
 
 CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -mtext-section-literals
-CPPFLAGS:=$(CPPFLAGS) -Iinclude -I../libc/include
+CPPFLAGS:=$(CPPFLAGS) -Iinclude -I../include
 LIBK_CFLAGS:=$(CFLAGS) -L../libc -Lk
 LIBK_CPPFLAGS:=$(CPPFLAGS)
 
