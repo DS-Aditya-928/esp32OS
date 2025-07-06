@@ -16,7 +16,7 @@ extern "C" void* malloc(size_t s)
         UART::print(md.regAddr);UART::print(" ");UART::print(md.regLength);UART::print("\r\n");
         if((md.regLength < 0))
         {
-            if((md.regAddr + s) <= (heapSize - 2 - ((i + 1) * sizeof(heapMD))))//make sure hnew region end wont clash with metadatas new entry
+            if((md.regAddr + s) <= (heapSize - 2 - ((numEnt + 1) * sizeof(heapMD))))//make sure hnew region end wont clash with metadatas new entry
             {
                 //modify existing md region to account for its shrining and append new region to end.
                 heapMD nmd = {.regAddr = md.regAddr, .regLength = s};
