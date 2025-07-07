@@ -20,8 +20,12 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
    bool* y = (bool*)malloc(1);
    int* x = (int*)malloc(sizeof(int));
    *x = 19283;
+   free(x);
+   int* z = (int*)malloc(sizeof(int));
+   *z = 90;
+   free(z);
    
-   UART::print(*x);
+   UART::print(*z);
    UART::print(a);
    while(1)
    {    

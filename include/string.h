@@ -7,4 +7,5 @@ extern "C" void* memcpy(void* __restrict, const void* __restrict, size_t);//impl
 extern "C" void* memmove(void*, const void*, size_t);
 extern "C" void* memset(void*, int, size_t);
 extern "C" void* malloc(size_t);
+extern "C" void free(void*);
 extern "C" size_t strlen(const char*);
