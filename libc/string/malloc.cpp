@@ -10,7 +10,7 @@ extern "C" void* malloc(size_t s)
     unsigned short numEnt = *(unsigned short*)(heapStart + heapSize - 2);
     UART::print("Number of heap entries: "); UART::print(numEnt); UART::print("\r\n");
     
-    for(int i = 1; i <= numEnt; i++)
+    for(int i = 1; i <= numEnt ; i++)
     {
         heapMD md = *(heapMD*)(heapStart + heapSize - 2 - (i * sizeof(heapMD)));
         UART::print(md.regAddr);UART::print(" ");UART::print(md.regLength);UART::print("\r\n");
@@ -52,4 +52,50 @@ extern "C" void free(void* p)
             *(heapMD*)(heapStart + heapSize - 2 - (i * sizeof(heapMD))) = md;
         }
     }
+}
+
+void getHeapMD()
+{
+    unsigned int heapStart = cMMU::getHeapStart();
+    unsigned short heapSize = cMMU::getHeapSize();
+    unsigned short numEnt = *(unsigned short*)(heapStart + heapSize - 2);
+    UART::print("Number of heap entries: "); UART::print(numEnt); UART::print("\r\n");
+    
+    for(int i = 1; i <= numEnt; i++)
+    {
+        heapMD md = *(heapMD*)(heapStart + heapSize - 2 - (i * sizeof(heapMD)));
+        UART::print(md.regAddr);UART::print(" ");UART::print(md.regLength);UART::print("\r\n");
+    }
+}
+
+
+void* operator new(size_t size)
+{
+    return malloc(size);
+}
+
+void* operator new[](size_t size)
+{
+    return malloc(size);
+}
+
+void operator delete(void* p) noexcept
+{
+    free(p);
+}
+
+
+void operator delete(void* p, size_t size) noexcept
+{
+    free(p);
+}
+
+void operator delete[](void* p) noexcept
+{
+    free(p);
+}
+
+void operator delete[](void* p, size_t size) noexcept
+{
+    free(p);
 }

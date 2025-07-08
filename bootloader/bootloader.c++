@@ -4,6 +4,20 @@
 #include <WDT.h>
 #include <MMU.h>
 
+class testClass
+{
+public:
+    testClass()
+    {
+        UART::print("testClass constructor called!\r\n");
+    }
+    ~testClass()
+    {
+        UART::print("testClass destructor called!\r\n");
+    }
+};
+
+
 extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
 {
    WDT::disableBootProtection(WDT::RTC);
@@ -23,7 +37,11 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
    free(x);
    int* z = (int*)malloc(sizeof(int));
    *z = 90;
-   free(z);
+
+   testClass* mmu = new testClass();
+   //free(z);
+
+   getHeapMD();
    
    UART::print(*z);
    UART::print(a);
