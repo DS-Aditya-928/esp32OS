@@ -8,12 +8,12 @@ extern "C" void* malloc(size_t s)
     unsigned int heapStart = cMMU::getHeapStart();
     unsigned short heapSize = cMMU::getHeapSize();
     unsigned short numEnt = *(unsigned short*)(heapStart + heapSize - 2);
-    UART::print("Number of heap entries: "); UART::print(numEnt); UART::print("\r\n");
+    //UART::print("Number of heap entries: "); UART::print(numEnt); UART::print("\r\n");
     
     for(int i = 1; i <= numEnt ; i++)
     {
         heapMD md = *(heapMD*)(heapStart + heapSize - 2 - (i * sizeof(heapMD)));
-        UART::print(md.regAddr);UART::print(" ");UART::print(md.regLength);UART::print("\r\n");
+        //UART::print(md.regAddr);UART::print(" ");UART::print(md.regLength);UART::print("\r\n");
         if((md.regLength < 0))
         {
             if((md.regAddr + s) <= (heapSize - 2 - ((numEnt + 1) * sizeof(heapMD))))//make sure hnew region end wont clash with metadatas new entry
@@ -38,16 +38,16 @@ extern "C" void free(void* p)
     unsigned int heapStart = cMMU::getHeapStart();
     unsigned short heapSize = cMMU::getHeapSize();
     unsigned short numEnt = *(unsigned short*)(heapStart + heapSize - 2);
-    UART::print("(free)Number of heap entries: "); UART::print(numEnt); UART::print("\r\n");
+    //UART::print("(free)Number of heap entries: "); UART::print(numEnt); UART::print("\r\n");
 
     for(int i = 1; i <= numEnt; i++)
     {
         heapMD md = *(heapMD*)(heapStart + heapSize - 2 - (i * sizeof(heapMD)));
-        UART::print(md.regAddr);UART::print(" ");UART::print(md.regLength);UART::print("\r\n");
+        //UART::print(md.regAddr);UART::print(" ");UART::print(md.regLength);UART::print("\r\n");
         if((void*)(md.regAddr) == (p - heapStart))
         {
             //found the valid one???
-            UART::print("Found: "); UART::print((int)p); UART::print("\r\n");
+            //UART::print("Found: "); UART::print((int)p); UART::print("\r\n");
             md.regLength = md.regLength * -1;
             *(heapMD*)(heapStart + heapSize - 2 - (i * sizeof(heapMD))) = md;
         }
