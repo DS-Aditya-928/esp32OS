@@ -103,21 +103,6 @@ void testFunc1(void)
     }
 }
 
-void init_task_context(TaskContext* ctx, void (*entry)(void), void* stack_top) {
-    // Zero out all registers
-    for (int i = 0; i < 16; i++) ctx->regs[i] = 0;
-
-    // Set a1 = stack pointer (aligned 16 bytes)
-    ctx->regs[1] = ((uint32_t)stack_top) & ~0xF;
-
-    // Set a0 = return address, in case task ever returns (optional)
-    ctx->regs[0] = (uint32_t)task_exit;  // a safe infinite loop or crash handler
-
-    // Manually inject initial PC by faking a yield-to-entry
-    // On resume, instead of `ret`, jump to entry:
-    ctx->regs[2] = (uint32_t)entry;  // Save entry address for bootstrapping
-}
-
 void* oldSP;
 
 extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
@@ -131,7 +116,7 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
     UART::print("Kernel loaded!\r\n");
     UART::print("Compiled on "); UART::print(__DATE__); UART::print(" at "); UART::print(__TIME__); UART::print(".\r\n");
 
-    void* oldSP;
+    
 
     /*
     __asm__ volatile ("mov %0, a1" : "=r"(oldSP));
@@ -150,12 +135,40 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
     UART::print("Changing 2 stack\r\n");
     */
 
+    /*
     void* newStack = (void*)(malloc(2048) + 2048); // Allocate 2kB of memory for the new stack
     regs1[1] = (uint32_t)newStack; // Set a1 to the new stack pointer
     regs1[9] = (uint32_t)testFunc1; // Set a9 to the entry point of task1
     bool fCall = true;
     //yield(&dummyTask, task1); // Start with task1
     int x = 0;
+    */
+    unsigned int r = *(unsigned int*)(0x3FF5F000);
+    r |= (1U << 31);
+    r |= (1U << 10); // Enable the alarm 
+    r |= (1U << 11);//generate level interrupt
+    *(unsigned int*)(0x3FF5F000) = r; // Set the bit to enable the counter
+
+    *(unsigned int*)(0x3FF5F010) = 5500000; // Set the alarm timer
+    
+    while(true)
+    {
+        *(unsigned int*)(0x3FF5F00C) = 1;//cpy value to counter regs
+        unsigned int lowBits = *(unsigned int*)(0x3FF5F004);
+        unsigned int highBits = *(unsigned int*)(0x3FF5F008);
+        UART::print("Counter: ");   
+        unsigned long long counter = ((unsigned long long)highBits << 32) | lowBits;
+        UART::print(counter);
+        UART::print("\r\n");
+        //*(unsigned int*)(0x3FF5F020) = 1;
+    }
+
+    while(true)
+    {
+
+    }
+    
+    /*
     while(1)
     {    
         UART::print("2 ");
@@ -211,4 +224,5 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
         :  // Clobber list: a9 and memory
         );
     }
+    */
 }
