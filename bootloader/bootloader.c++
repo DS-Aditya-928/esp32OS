@@ -143,13 +143,18 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
     //yield(&dummyTask, task1); // Start with task1
     int x = 0;
     */
+    
+    *(unsigned int*)(0x3FF5F010) = 5500000; // Set the alarm timer
+
+
     unsigned int r = *(unsigned int*)(0x3FF5F000);
     r |= (1U << 31);
-    r |= (1U << 10); // Enable the alarm 
-    r |= (1U << 11);//generate level interrupt
+    r |= (1U << 29);
+    r |= (1U << 10);
+    r |= (1U << 11);
     *(unsigned int*)(0x3FF5F000) = r; // Set the bit to enable the counter
 
-    *(unsigned int*)(0x3FF5F010) = 5500000; // Set the alarm timer
+    *(unsigned int*)(0x3FF5F098) |= (1U << 0); // Enable the counter interrupt
     
     while(true)
     {
@@ -160,7 +165,9 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
         unsigned long long counter = ((unsigned long long)highBits << 32) | lowBits;
         UART::print(counter);
         UART::print("\r\n");
-        //*(unsigned int*)(0x3FF5F020) = 1;
+        unsigned int r = *(unsigned int*)(0x3FF5F000);
+        r |= (1U << 10);
+        *(unsigned int*)(0x3FF5F000) = r; // Set the bit to enable the alarm
     }
 
     while(true)
