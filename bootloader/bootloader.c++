@@ -19,7 +19,7 @@ uint32_t regs2[16];
 void yield2()
 {
     //save a0 of task 2
-    regs2[0] = 0x40080208;
+    regs2[0] = 0x400801b8;
     /*
     asm volatile (
         "s32i  a0,  %0,  0\n"
@@ -33,7 +33,7 @@ void yield2()
 void yield1()
 {
     //save a0 of task 1 to a9 of regs1, so when its loaded by the asm in the main loop, auto jmp to this address.
-    regs1[9] = 0x400800b0;
+    regs1[9] = 0x400800b2;
     /*
     asm volatile (
         "s32i  a0,  %0,  36\n"
@@ -44,17 +44,9 @@ void yield1()
     */
 } 
 
-void testFunc1(void)
+inline  __attribute__((always_inline)) void yield()
 {
-    int x = 0;
-    while(true)
-    {
-        UART::print("1 ");
-        UART::print(x);
-        UART::print("\r\n");
-        x++;
-
-        asm volatile (
+    asm volatile (
         "s32i  a0,  %0,  0\n"
         "s32i  a1,  %0,  4\n"
         "s32i  a2,  %0,  8\n"
@@ -100,9 +92,23 @@ void testFunc1(void)
         : "r"(regs2)             // %0 = C variable regs
         :  // Clobber list: a9 and memory
         );
+}
+
+void testFunc1(void)
+{
+    int x = 0;
+    while(true)
+    {
+        UART::print("1 ");
+        UART::print(x);
+        UART::print("\r\n");
+        x++;
+
+        yield();
     }
 }
 
+/*
 void init_task_context(TaskContext* ctx, void (*entry)(void), void* stack_top) {
     // Zero out all registers
     for (int i = 0; i < 16; i++) ctx->regs[i] = 0;
@@ -117,6 +123,7 @@ void init_task_context(TaskContext* ctx, void (*entry)(void), void* stack_top) {
     // On resume, instead of `ret`, jump to entry:
     ctx->regs[2] = (uint32_t)entry;  // Save entry address for bootstrapping
 }
+*/
 
 void* oldSP;
 
