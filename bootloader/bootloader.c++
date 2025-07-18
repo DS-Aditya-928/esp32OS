@@ -105,6 +105,11 @@ void testFunc1(void)
 
 void* oldSP;
 
+extern "C" void isr(void)
+{
+    UART::print("ISR called!\r\n");
+}
+
 extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
 {
     WDT::disableBootProtection(WDT::RTC);
@@ -148,16 +153,39 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
 
 
     unsigned int r = *(unsigned int*)(0x3FF5F000);
-    r |= (1U << 31);
-    r |= (1U << 29);
-    r |= (1U << 10);
-    r |= (1U << 11);
-    *(unsigned int*)(0x3FF5F000) = r; // Set the bit to enable the counter
-
+    r |= (1U << 31);//enable the counter
+    r |= (1U << 29);//enable autoreload
+    r |= (1U << 10);//enable alarm
+    r |= (1U << 11);//enable level interrupt
+    
     *(unsigned int*)(0x3FF5F098) |= (1U << 0); // Enable the counter interrupt
+
+    /*
+    *(void (**)(void))(0x3FF1F014) = &isr;//write func to the isr.
+    
+    unsigned int iMap = *(unsigned int*)(0x3FF0013C);
+    iMap = (iMap & ~0x1F) | 0x1F; // set the first 5 bits of the interrupt map
+    *(unsigned int*)(0x3FF0013C) = iMap; // Write back the modified interrupt map
+
+    *(unsigned int*)(0x3FF1F000) |= (1U << 5); // Enable interrupt processing
+    */
+    *(unsigned int*)(0x3FF1F058) |= 1U;
+    
+    unsigned int iMap = *(unsigned int*)(0x3FF0013C);
+    iMap = (iMap & ~0x1F) | (1 & 0x1F);; // set the first 5 bits of the interrupt map to 1 i.e 1
+    *(unsigned int*)(0x3FF0013C) = iMap; // Write back the modified interrupt map
+    *(unsigned int*)(0x3FF1F000) |= (1U << 1); // Enable interrupt processing 
+
+    *(unsigned int*)(0x3FF5F000) = r;
+    for(int i = 0; i < 7; i++)
+    {
+       void (**fLoc)() = *(void (***)())(0x3FF1F004 + (i * 4));
+        *fLoc = isr;
+    }
     
     while(true)
     {
+        /*
         *(unsigned int*)(0x3FF5F00C) = 1;//cpy value to counter regs
         unsigned int lowBits = *(unsigned int*)(0x3FF5F004);
         unsigned int highBits = *(unsigned int*)(0x3FF5F008);
@@ -165,9 +193,28 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
         unsigned long long counter = ((unsigned long long)highBits << 32) | lowBits;
         UART::print(counter);
         UART::print("\r\n");
-        unsigned int r = *(unsigned int*)(0x3FF5F000);
-        r |= (1U << 10);
-        *(unsigned int*)(0x3FF5F000) = r; // Set the bit to enable the alarm
+        */
+        bool intTrig = (bool)((*(unsigned int*)(0x3FF000EC) >> 14) & 1U);
+
+        unsigned int currInt = *(unsigned int*)(0x3FF1F028);
+        UART::print("Current interrupt status: ");
+        UART::print(currInt);
+        UART::print("\r\n");
+        
+        //unsigned int tS = *(unsigned int*)(0x3FF000EC);
+        //tS = (tS >> 14) & 1U;
+        //UART::print(tS);
+        //UART::print("\r\n");
+        //check int status
+        if(intTrig) // Read the interrupt status register (interrupt matrix gets it)
+        {
+            UART::print("Counter interrupt!\r\n");
+            
+            *(unsigned int*)(0x3FF5F0A4) |= (1U); // Clear the interrupt status
+            unsigned int r = *(unsigned int*)(0x3FF5F000);
+            r |= (1U << 10);
+            *(unsigned int*)(0x3FF5F000) = r; // Set the bit to enable the alarm
+        }
     }
 
     while(true)
