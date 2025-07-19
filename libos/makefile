@@ -27,13 +27,13 @@ all: $(BINARIES)
 libos.a: $(LIBK_OBJS)
 	xtensa-esp32-elf-ar rcs $@ $(LIBK_OBJS)
 
-.c.o:
+.cpp.o:
 	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
-.c.s:
+.cpp.s:
 	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
-.c.libos.o:
+.cpp.libos.o:
 	xtensa-esp32-elf-g++ -MD -c $< -o $@ $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)
 
 .S.libos.o:
