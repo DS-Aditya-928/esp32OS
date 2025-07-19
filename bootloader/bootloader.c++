@@ -6,20 +6,13 @@
 
 int curTask = 1;
 
-typedef struct {
-    uint32_t regs[16];  // a0–a15
-} TaskContext;
-
-TaskContext* task1 = 0;
-TaskContext* task2 = 0;
-
-uint32_t regs1[16]; 
-uint32_t regs2[16];
+uint32_t regs[2][16]; 
+uint32_t retPoints[2];
 
 void yield2()
 {
     //save a0 of task 2
-    regs2[0] = 0x400801b8;
+    regs[1][0] = 0x400801b8;
     /*
     asm volatile (
         "s32i  a0,  %0,  0\n"
@@ -29,7 +22,8 @@ void yield2()
     );
     */
 }
-    
+   
+/*
 void yield1()
 {
     //save a0 of task 1 to a9 of regs1, so when its loaded by the asm in the main loop, auto jmp to this address.
@@ -41,37 +35,28 @@ void yield1()
         : "r"(regs1)             // %0 = C variable regs
         :
     );
-    */
+    
 } 
+*/
 
-inline  __attribute__((always_inline)) void yield()
+void hiddenYield(uint32_t* cRegs)
 {
-    asm volatile (
-        "s32i  a0,  %0,  0\n"
-        "s32i  a1,  %0,  4\n"
-        "s32i  a2,  %0,  8\n"
-        "s32i  a3,  %0, 12\n"
-        "s32i  a4,  %0, 16\n"
-        "s32i  a5,  %0, 20\n"
-        "s32i  a6,  %0, 24\n"
-        "s32i  a7,  %0, 28\n"
-        "s32i  a8,  %0, 32\n"
-        "s32i  a9,  %0, 36\n"   // a9 contains original pointer
-        "s32i  a10, %0, 40\n"
-        "s32i  a11, %0, 44\n"
-        "s32i  a12, %0, 48\n"
-        "s32i  a13, %0, 52\n"
-        "s32i  a14, %0, 56\n"
-        "s32i  a15, %0, 60\n"
-        :
-        : "r"(regs1)             // %0 = C variable regs
-        :      
-        );
+    for(int i = 0; i < 16; i++)
+    {
+        regs[curTask][i] = cRegs[i]; // Save current task's registers
+    }
 
-        //saved all of f1s regs.
-        yield1();//now a9 of regs1 holds the return point of task 1.
-        //load in all of task 2's registers
-        asm volatile (
+    asm volatile (
+    "mov %0, a0\n"
+    : "=r"(regs[curTask][0])
+    :
+    : "memory" // Clobber list: memory
+    );
+    regs[curTask][0] -= 0x40000000;
+    
+    curTask++;
+    if(curTask >= 2) curTask = 0; // Switch to the other task
+    asm volatile (
         "l32i a0,  %0,  0\n"
         "l32i a1,  %0,  4\n"
         "l32i a2,  %0,  8\n"
@@ -87,11 +72,43 @@ inline  __attribute__((always_inline)) void yield()
         "l32i a13, %0, 52\n"
         "l32i a14, %0, 56\n"
         "l32i a15, %0, 60\n"
-        "jx a0\n" // Jump to the ret? should crash rn, should be this + whatever the asm takes up.
+        "jx a0\n" 
         :
-        : "r"(regs2)             // %0 = C variable regs
-        :  // Clobber list: a9 and memory
+        : "r"(regs[curTask])
+        :  
         );
+}
+
+inline  __attribute__((always_inline)) void yield()
+{
+    /*
+    1.) Save all the current function's registers
+    2.) Call hiddenYield to save ret point and load second task's registers. hiddenYield will also jump.
+    */
+    uint32_t regBuf[16]; // Buffer to save registers
+    asm volatile (
+        "s32i  a0,  %0,  0\n"
+        "s32i  a1,  %0,  4\n"
+        "s32i  a2,  %0,  8\n"
+        "s32i  a3,  %0, 12\n"
+        "s32i  a4,  %0, 16\n"
+        "s32i  a5,  %0, 20\n"
+        "s32i  a6,  %0, 24\n"
+        "s32i  a7,  %0, 28\n"
+        "s32i  a8,  %0, 32\n"
+        "s32i  a9,  %0, 36\n"
+        "s32i  a10, %0, 40\n"
+        "s32i  a11, %0, 44\n"
+        "s32i  a12, %0, 48\n"
+        "s32i  a13, %0, 52\n"
+        "s32i  a14, %0, 56\n"
+        "s32i  a15, %0, 60\n"
+        :
+        : "r"(regBuf)             // %0 = C variable regs
+        :      
+        );
+        hiddenYield(regBuf);
+        //load in all of task 2's registers
 }
 
 void testFunc1(void)
@@ -158,8 +175,8 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
     */
 
     void* newStack = (void*)(malloc(2048) + 2048); // Allocate 2kB of memory for the new stack
-    regs1[1] = (uint32_t)newStack; // Set a1 to the new stack pointer
-    regs1[9] = (uint32_t)testFunc1; // Set a9 to the entry point of task1
+    regs[0][1] = (uint32_t)newStack; // Set a1 to the new stack pointer
+    regs[0][0] = (uint32_t)testFunc1; // Set a0 to the entry point of task1
     bool fCall = true;
     //yield(&dummyTask, task1); // Start with task1
     int x = 0;
@@ -170,52 +187,10 @@ extern "C" void  __attribute__((noreturn)) call_start_cpu0(void)
         UART::print("\r\n");
         x++;
         //save all the registers manually
-        asm volatile (
-        "s32i  a0,  %0,  0\n"
-        "s32i  a1,  %0,  4\n"
-        "s32i  a2,  %0,  8\n"
-        "s32i  a3,  %0, 12\n"
-        "s32i  a4,  %0, 16\n"
-        "s32i  a5,  %0, 20\n"
-        "s32i  a6,  %0, 24\n"
-        "s32i  a7,  %0, 28\n"
-        "s32i  a8,  %0, 32\n"
-        "s32i  a9,  %0, 36\n"   // a9 contains original pointer
-        "s32i  a10, %0, 40\n"
-        "s32i  a11, %0, 44\n"
-        "s32i  a12, %0, 48\n"
-        "s32i  a13, %0, 52\n"
-        "s32i  a14, %0, 56\n"
-        "s32i  a15, %0, 60\n"
-        :
-        : "r"(regs2)             // %0 = C variable regs
-        :      
-        );
+        yield();
 
-        yield2();//this saves the return point.
-        //now, regs2 holds all the registers of task 2
-        //now the switch
-        //load all of task 1's registers
-        asm volatile (
-        "l32i a0,  %0,  0\n"
-        "l32i a1,  %0,  4\n"
-        "l32i a2,  %0,  8\n"
-        "l32i a3,  %0, 12\n"
-        "l32i a4,  %0, 16\n"
-        "l32i a5,  %0, 20\n"
-        "l32i a6,  %0, 24\n"
-        "l32i a7,  %0, 28\n"
-        "l32i a9,  %0, 36\n"
-        "l32i a10, %0, 40\n"
-        "l32i a11, %0, 44\n"
-        "l32i a12, %0, 48\n"
-        "l32i a13, %0, 52\n"
-        "l32i a14, %0, 56\n"
-        "l32i a15, %0, 60\n"
-        "jx a9\n" // Jump to the entry point of task1
-        :
-        : "r"(regs1)             // %0 = C variable regs
-        :  // Clobber list: a9 and memory
-        );
+        //UART::print("Yielding\r\n");
+        //yield();
+        //UART::print("Yielded\r\n");
     }
 }

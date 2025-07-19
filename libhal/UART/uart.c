@@ -1,5 +1,6 @@
 #include "UART.h"
 #include "string.h"
+#include <stdint.h>
 
 #define UART_0 0x3FF40000
 #define UART_1 0x3FF50000
@@ -80,6 +81,26 @@ bool UART::print(int x)
     }
     int b10 = 1;
     while(b10 * 10 <= y)
+    {
+        b10 = b10 * 10;
+    }
+    while(b10 > 0)
+    {
+        int digit = y/b10;
+        y = y%b10;
+        b10 = b10/10;
+        sendCharW((char)(digit + '0'));
+    }
+    return(true);
+}
+
+bool UART::print(uint32_t x)
+{
+    sendCharW('U');
+    sendCharW('I');
+    uint32_t y = x;
+    uint32_t b10 = 1;
+    while((b10 * 10) <= y)
     {
         b10 = b10 * 10;
     }

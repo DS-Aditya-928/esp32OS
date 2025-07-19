@@ -2,6 +2,7 @@
 #define dsuart
 
 #include <stdbool.h>
+#include <stdint.h>
 
 class UART
 {
@@ -13,6 +14,7 @@ public:
     static int init();
     static bool print(const char* data);
     static bool print(int x);
+    static bool print(uint32_t x);
 
     enum UARTN
     {
